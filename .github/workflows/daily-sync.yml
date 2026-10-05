@@ -1,0 +1,59 @@
+name: Daily Instagram → Google Photos sync
+
+on:
+  schedule:
+    # Every day at 06:17 UTC (≈ 08:17 in Paris in summer, 07:17 in winter).
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      backfill:
+        description: "Also copy older saved posts (not just new ones)"
+        type: boolean
+        default: false
+      limit:
+        description: "Maximum posts to copy in this run"
+        default: "50"
+
+permissions:
+  contents: write  # to commit state/synced.json back to the repo
+
+concurrency:
+  group: sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      - name: Copy new saved posts
+        env:
+          IG_USERNAME: ${{ secrets.IG_USERNAME }}
+          IG_SESSIONID: ${{ secrets.IG_SESSIONID }}
+          IG_CSRFTOKEN: ${{ secrets.IG_CSRFTOKEN }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REFRESH_TOKEN: ${{ secrets.GOOGLE_REFRESH_TOKEN }}
+          GPHOTOS_ALBUM_TITLE: ${{ vars.GPHOTOS_ALBUM_TITLE || 'Instagram Saved' }}
+          INCLUDE_VIDEOS: ${{ vars.INCLUDE_VIDEOS || 'false' }}
+        run: |
+          python sync.py --limit "${{ inputs.limit || '50' }}" ${{ inputs.backfill && '--backfill' || '' }}
+
+      - name: Save progress
+        if: always()
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add state/synced.json 2>/dev/null || exit 0
+          git diff --cached --quiet && exit 0
+          git commit -m "Update sync state"
+          git push
