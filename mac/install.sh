@@ -159,7 +159,7 @@ Last step, in Google Chrome:
   1. Go to photos.google.com → Upload (top right) → Back up folders
      → choose Pictures/Instagram Saved → allow access.
   2. Chrome menu ⋮ → Cast, save, and share → Install page as app.
-  3. System Settings → General → Login Items → + → Applications
+  3. System Settings → General → Login Items → +
      → your home folder → Applications → Chrome Apps → Google Photos.
 Google Photos now opens when you log in and uploads new saves on its own.
 NEXT
