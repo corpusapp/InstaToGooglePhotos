@@ -46,6 +46,8 @@ jobs:
           GPHOTOS_ALBUM_TITLE: ${{ vars.GPHOTOS_ALBUM_TITLE || 'Instagram Saved' }}
           INCLUDE_VIDEOS: ${{ vars.INCLUDE_VIDEOS || 'false' }}
         run: |
+          # Not set up (e.g. you use the Mac version instead): do nothing.
+          if [ -z "$IG_SESSIONID" ]; then echo "Secrets not configured, skipping."; exit 0; fi
           python sync.py --limit "${{ inputs.limit || '50' }}" ${{ inputs.backfill && '--backfill' || '' }}
 
       - name: Save progress
